@@ -1,0 +1,143 @@
+#shelfMaker.py
+#9/21/2019
+# by Enrique Mendez (eqm@mit.edu) while at MIT
+progDescription = '''Specify the 5 parameters to spit out two dxf files
+that define a shelf. Requires dxfwrite 1.2.1
+
+
+
+                                        .@&&&&&@                          
+            width --->            &&             &&&.         <--- depth  
+                           &&&&.                        .&&&.                  
+                    @&&&*                                     /&&&.            
+             /&&&/                                                   #&&&      
+      #&&&.                                                                &&/.
+&&&(                                       THICKNESS  |                #&&@*  &
+&  ((&(                  .                            |        %&%@,    /&&&( &
+&       ,@&&@.                                        V  %&&&.    &&@.      & &
+@             .&&&%                               %&&&/    %&&&.            & &
+@                  .&&&*                    %&&@    .@&&@                   @ @
+&                        #&&@         %&&/    (&&     ^   THICKNESS       @ %
+@                              &&&&&   .&&&/ &        |                     & @
+@                                & .&.       @        |  (                  & @
+@                                &% &        %                              & @
+@                       .        && &        .                              & @
+@                                && &        .*                             & @
+@                                (& &        .(                             & &
+@                                ,& &        @&                             & &
+@                                *& &   (&/      ,&&                        & &
+&               this             *& &&                 @&(                  & &
+&                is              *& &                      ,&&/             & &
+&                 a              *& &                           %&        & &
+&                backbone        *& &         #theres                 &&&.  & &
+&                  piece         *& &   (N=2) shelves in this             .&& &
+&                                *& &       example design           /&&/   & &
+/                                .% /       ( three pcs tho )   &/#    //@  / /
+/                                .# /    (roof dont count) .&&     *&/      / &
+&                                *# %                *&&@    %&&            & #
+&                                /& &           .&&@    *&&&                & &
+&                                /& &       #&&    .&&&                     & &
+&                                /& &   &&.    &&&/                         & &
+&     #                          /& @@    *&& &/                            & &
+&                          _____ /&  (&&*     @/                            & &
+&                            ^   /& &         @*                   #        & &
+&                            |   /& &     (&@    &               /        & &
+&*                           |   /& &  &@            /&&&                   & &
+&(                           |   #@ &.                    #//%              & &
+@/                               &@ &                          *&&&         & &
+@&                           h   && &                               .&&@    & &
+#@                           e   && &       this piece is                 @&& &
+(@                           i   && &         a divider                  &&  &@
+,@                 *         g   &@ &                                (&&  &%   
+(@                           h   &@ &                             &&* *      
+#@                           t   && &                         *&@  @&/         
+.&&                              && &                      (&@  &&.            
+    &&(                      |   && @                   &&. #&@                
+        &&@                  |   && &  *            %&@  &&.                   
+            &&&              |   %* &           &&&  #&@                       
+                &&%          |   /& &       ,&@   @&/                          
+                    &&.      |    % &    &@   ,&@                              
+                        &&  _V____& #&&.   @&/                                 
+                           &&     &    @&(                                     
+                               %&*&@&                                          
+'''
+
+
+
+#arg parsing
+
+import argparse
+
+parser = argparse.ArgumentParser(description=progDescription,
+	formatter_class=argparse.RawDescriptionHelpFormatter)
+
+parser.add_argument('depth', metavar='D', type=float, nargs=1,
+	help='Depth of the shelf. See ascii art.')
+parser.add_argument('width', metavar='W', type=float, nargs=1,
+	help='Width of the shelf. See ascii art.')
+parser.add_argument('height', metavar='H', type=float, nargs=1,
+	help='Height of a single shelf from top of wood to bottom of next piece of wood. See ascii art.')
+parser.add_argument('thickness', metavar='T', type=float, nargs=1,
+	help='thickness of the shelf material. See ascii art.')
+parser.add_argument('number', metavar='N', type=int, nargs=1,
+	help='Number of shelves. See ascii art.')
+parser.add_argument('-o','--outfile',dest='fname', type=str, 
+ 	help='Specify the root of the filename for the outputted dxf files. Default is \"shelf\"',default = 'shelf')#,action='store_const', 
+#	default='shelf',)
+#parser.add_argument('-f', '--foo')
+
+args = parser.parse_args()
+
+depth = args.depth[0]
+width = args.width[0]
+height = args.height[0]
+thickness = args.thickness[0]
+number = args.number[0]
+fname = args.fname
+#fname = ' '
+
+print('''
+You want a shelf that has a depth of	%f,
+width of                            	%f, 
+height per shelf of                 	%f,
+wood thickness of                   	%f and 
+%i total shelves.                   	
+This gives a total height           	%f
+
+Exporting files to %s_backbone.dxf and %s_divider.dxf''' % (depth,
+ width,height,thickness,number, thickness*(number+1) + (number)*height,fname,fname))
+
+totalheight = thickness*(number+1) + (number)*height
+
+#dxf generation
+
+from dxfwrite import DXFEngine as dxf
+
+#divider
+drawing = dxf.drawing('%s_divider.dxf'%fname)
+drawing.add(	dxf.line((0, 0),                    	(width, 0))                	)
+drawing.add(	dxf.line((width,0),                 	(width, depth/2))          	)
+drawing.add(	dxf.line((width, depth/2),          	(width-thickness, depth/2))	)
+drawing.add(	dxf.line((width-thickness, depth/2),	(width-thickness, depth))  	)
+drawing.add(	dxf.line((width-thickness,depth),   	(thickness,depth))         	)
+drawing.add(	dxf.line((thickness,depth),         	(thickness,depth/2))       	)
+drawing.add(	dxf.line((thickness,depth/2),       	(0,depth/2))               	)
+drawing.add(	dxf.line((0,depth/2),               	(0,0))                     	)	
+drawing.save()
+
+#backbone
+drawing = dxf.drawing('%s_backbone.dxf'%fname)
+drawing.add(	dxf.line((0,0),	(0,depth/2))	)
+dL = thickness+height
+for i in range(number):
+	drawing.add(	dxf.line((i*dL+0,depth/2),             	(i*dL+thickness,depth/2))       	)
+	drawing.add(	dxf.line((i*dL+thickness,depth/2),     	(i*dL+thickness,depth))         	)
+	drawing.add(	dxf.line((i*dL+thickness,depth),       	(i*dL+thickness+height,depth))  	)
+	drawing.add(	dxf.line((i*dL+thickness+height,depth),	(i*dL+thickness+height,depth/2))	)
+
+drawing.add(	dxf.line((number*dL,depth/2),          	(number*dL+thickness,depth/2))      	)
+drawing.add(	dxf.line((number*dL+thickness,depth/2),	(number*dL+thickness,0))            	)
+drawing.add(	dxf.line((number*dL+thickness,0),      	(number*dL+thickness-totalheight,0))	)
+drawing.save()
+
+
